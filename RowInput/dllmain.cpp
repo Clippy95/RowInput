@@ -43,6 +43,7 @@ std::unordered_map<std::string, uintptr_t> addressMap = {
     {"sprint", 0x0234E80C},
     {"reload", 0x0234E7EC},
     {"crouch", 0x0234E7F4},
+    {"fineaim", 0x0234E7FC},
     {"grabhuman", 0x0234E804},
     {"taunt", 0x0234E92C},
     {"compliment", 0x0234E934},
@@ -77,8 +78,8 @@ std::unordered_map<std::string, uint8_t> buttonMap = {
     {"RB", 5},
     {"SELECT", 6},
     {"START", 7},
-    {"RS", 8},
-    {"LS", 9},
+    {"RS", 9},
+    {"LS", 8},
     {"LT", 10},
     {"RT", 11},
     {"DPadRight", 16},
@@ -181,13 +182,21 @@ void loadControls() {
         std::cout << "Fallback to Default controls for Plane" << std::endl;
 #endif
     }
+
     if (!readIniFile(currentDir + "\\RowInput\\HumanShield.ini", controlsMap["HumanShield"])) {
         controlsMap["HumanShield"] = controlsMap["Default"];
 #ifdef _DEBUG
         std::cout << "Fallback to Default controls for HumanShield" << std::endl;
 #endif
     }
+
+    if (!readIniFile(currentDir + "\\RowInput\\Bullets.ini", controlsMap["Bullets"])) {
+        controlsMap["Bullets"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for Bullets" << std::endl;
+#endif
     }
+}
 
 void setControlValue(uintptr_t address, uint8_t value) {
     if (*(uint8_t*)address != value) {
@@ -223,25 +232,31 @@ void applyControls(const std::unordered_map<std::string, uint8_t>& controls, con
 
 void SchemeB() {
     uint8_t* player_status = (uint8_t*)0x00E9A5BC;
+    uint8_t* holdingbullets = (uint8_t*)0x02305D90;
     switch (*player_status) {
-        case 3:
-            applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
-            break;
-        case 5:
-            applyControls(controlsMap["Boat"], addressMap); // Boat controls
-            break;
-        case 6:
-            applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
-            break;
-        case 8:
-            applyControls(controlsMap["Plane"], addressMap); // Plane controls
-            break;
-        case 22:
-            applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
-            break;
-        default:
+    case 3:
+        applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
+        break;
+    case 5:
+        applyControls(controlsMap["Boat"], addressMap); // Boat controls
+        break;
+    case 6:
+        applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
+        break;
+    case 8:
+        applyControls(controlsMap["Plane"], addressMap); // Plane controls
+        break;
+    case 22:
+        applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
+        break;
+    default:
+        if (*holdingbullets == 4) {
+            applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
+        }
+        else {
             applyControls(controlsMap["Default"], addressMap); // Default controls
-            break;
+        }
+        break;
     }
 }
 
@@ -255,13 +270,13 @@ DWORD WINAPI SchemeBLoop(LPVOID) {
     while (g_running) {
         loadControls(); // Reload controls in debug builds
         SchemeB();
-        Sleep(340); // Sleep for 340 ms
+        Sleep(33); // Sleep 
 }
 #else
     loadControls(); // Load controls once initially in release builds
     while (g_running) {
         SchemeB();
-        Sleep(340); // Sleep for 340 ms
+        Sleep(33); // Sleep
     }
 #endif
     return 0;
