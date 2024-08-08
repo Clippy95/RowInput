@@ -181,6 +181,12 @@ void loadControls() {
         std::cout << "Fallback to Default controls for Plane" << std::endl;
 #endif
     }
+    if (!readIniFile(currentDir + "\\RowInput\\HumanShield.ini", controlsMap["HumanShield"])) {
+        controlsMap["HumanShield"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for HumanShield" << std::endl;
+#endif
+    }
     }
 
 void setControlValue(uintptr_t address, uint8_t value) {
@@ -229,6 +235,9 @@ void SchemeB() {
             break;
         case 8:
             applyControls(controlsMap["Plane"], addressMap); // Plane controls
+            break;
+        case 22:
+            applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
             break;
         default:
             applyControls(controlsMap["Default"], addressMap); // Default controls
