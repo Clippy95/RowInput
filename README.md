@@ -85,5 +85,6 @@ AttackSecondary=LT
 
 Credits:
 - Tervel
+- Uzis
 - ThirteenAG: ASI Loader and example ASI code.
 - Iggy: Telling me about the Primary Attack / Secondary issue which is what caused me to create this script, and for supplying the included defaults in releases.
