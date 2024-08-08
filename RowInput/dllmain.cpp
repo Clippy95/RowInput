@@ -102,13 +102,13 @@ std::string getCurrentDirectory() {
 }
 
 // Function to read the INI files and set the mappings
-void readIniFile(const std::string& filePath, std::unordered_map<std::string, uint8_t>& controlMap) {
+bool readIniFile(const std::string& filePath, std::unordered_map<std::string, uint8_t>& controlMap) {
     if (!std::filesystem::exists(filePath)) {
-        // If the file does not exist, return without doing anything
+        // If the file does not exist, return false
 #ifdef _DEBUG
         std::cout << "File does not exist: " << filePath << std::endl;
 #endif
-        return;
+        return false;
     }
 
 #ifdef _DEBUG
@@ -126,30 +126,62 @@ void readIniFile(const std::string& filePath, std::unordered_map<std::string, ui
 #ifdef _DEBUG
                     std::cout << "Set " << key << " to " << (int)controlMap[key] << std::endl;
 #endif
-                } else {
+                }
+                else {
 #ifdef _DEBUG
                     std::cout << "Button " << kv.second << " not found in buttonMap" << std::endl;
 #endif
                 }
             }
-        } else {
+            return true;
+        }
+        else {
 #ifdef _DEBUG
             std::cout << "No 'Controls' section found in INI file" << std::endl;
 #endif
         }
-    } else {
+    }
+    else {
         MessageBoxW(NULL, L"Failed to read INI file", L"Error", MB_OK | MB_ICONERROR);
     }
+    return false;
 }
 
 void loadControls() {
     std::string currentDir = getCurrentDirectory();
-    readIniFile(currentDir + "\\RowInput\\Default.ini", controlsMap["Default"]); // Default controls
-    readIniFile(currentDir + "\\RowInput\\Vehicle.ini", controlsMap["Vehicle"]); // Vehicle controls
-    readIniFile(currentDir + "\\RowInput\\Boat.ini", controlsMap["Boat"]); // Boat controls
-    readIniFile(currentDir + "\\RowInput\\Helicopter.ini", controlsMap["Helicopter"]); // Helicopter controls
-    readIniFile(currentDir + "\\RowInput\\Plane.ini", controlsMap["Plane"]); // Plane controls
-}
+
+    // Load default controls
+    readIniFile(currentDir + "\\RowInput\\Default.ini", controlsMap["Default"]);
+
+    // Load specific controls with fallback to default
+    if (!readIniFile(currentDir + "\\RowInput\\Vehicle.ini", controlsMap["Vehicle"])) {
+        controlsMap["Vehicle"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for Vehicle" << std::endl;
+#endif
+    }
+
+    if (!readIniFile(currentDir + "\\RowInput\\Boat.ini", controlsMap["Boat"])) {
+        controlsMap["Boat"] = controlsMap["Vehicle"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Vehicle controls for Boat" << std::endl;
+#endif
+    }
+
+    if (!readIniFile(currentDir + "\\RowInput\\Helicopter.ini", controlsMap["Helicopter"])) {
+        controlsMap["Helicopter"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for Helicopter" << std::endl;
+#endif
+    }
+
+    if (!readIniFile(currentDir + "\\RowInput\\Plane.ini", controlsMap["Plane"])) {
+        controlsMap["Plane"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for Plane" << std::endl;
+#endif
+    }
+    }
 
 void setControlValue(uintptr_t address, uint8_t value) {
     if (*(uint8_t*)address != value) {
@@ -211,15 +243,20 @@ int myDetour() {
 
 DWORD WINAPI SchemeBLoop(LPVOID) {
 #ifdef _DEBUG
-    loadControls(); // Always load controls in debug builds
-#endif
+    while (g_running) {
+        loadControls(); // Reload controls in debug builds
+        SchemeB();
+        Sleep(340); // Sleep for 340 ms
+}
+#else
+    loadControls(); // Load controls once initially in release builds
     while (g_running) {
         SchemeB();
         Sleep(340); // Sleep for 340 ms
     }
+#endif
     return 0;
 }
-
 HANDLE g_thread = NULL;
 
 void setupHook() {
