@@ -12,7 +12,7 @@
 #include <algorithm> // Include for std::transform
 
 #pragma comment(lib, "libMinHook.x86.lib")
-#pragma optimize("", off)
+
 typedef int(*originalCall_t)();
 originalCall_t originalCall;
 
@@ -106,7 +106,7 @@ std::string getCurrentDirectory() {
 bool readIniFile(const std::string& filePath, std::unordered_map<std::string, uint8_t>& controlMap) {
     if (!std::filesystem::exists(filePath)) {
         // If the file does not exist, return false
-        #ifdef _DEBUG
+#ifdef _DEBUG
         std::cout << "File does not exist: " << filePath << std::endl;
 #endif
         return false;
@@ -229,40 +229,37 @@ void applyControls(const std::unordered_map<std::string, uint8_t>& controls, con
         }
     }
 }
-#pragma optimize("", off)
-__declspec(noinline) void SchemeB() {
-    uint8_t* player_status =  (uint8_t*)0x00E9A5BC;
-    uint8_t* holdingbullets = (uint8_t*)0x031ABC44;
-    uint8_t* menu_status = (uint8_t*)0x00EBE860;
-    if (*menu_status == 2) {
-        switch (*player_status) {
-        case 3:
-            applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
-            break;
-        case 5:
-            applyControls(controlsMap["Boat"], addressMap); // Boat controls
-            break;
-        case 6:
-            applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
-            break;
-        case 8:
-            applyControls(controlsMap["Plane"], addressMap); // Plane controls
-            break;
-        case 22:
-            applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
-            break;
-        default:
-            if (*holdingbullets == 0) {
-                applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
-            }
-            else {
-                applyControls(controlsMap["Default"], addressMap); // Default controls
-            }
-            break;
+
+void SchemeB() {
+    uint8_t* player_status = (uint8_t*)0x00E9A5BC;
+    uint8_t* holdingbullets = (uint8_t*)0x02305D90;
+    switch (*player_status) {
+    case 3:
+        applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
+        break;
+    case 5:
+        applyControls(controlsMap["Boat"], addressMap); // Boat controls
+        break;
+    case 6:
+        applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
+        break;
+    case 8:
+        applyControls(controlsMap["Plane"], addressMap); // Plane controls
+        break;
+    case 22:
+        applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
+        break;
+    default:
+        if (*holdingbullets == 4) {
+            applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
         }
+        else {
+            applyControls(controlsMap["Default"], addressMap); // Default controls
+        }
+        break;
     }
 }
-#pragma optimize("", on)
+
 int myDetour() {
     // Call the original function
     return originalCall();
@@ -278,9 +275,8 @@ DWORD WINAPI SchemeBLoop(LPVOID) {
 #else
     loadControls(); // Load controls once initially in release builds
     while (g_running) {
-        loadControls();
         SchemeB();
-        Sleep(20); // Sleep
+        Sleep(33); // Sleep
     }
 #endif
     return 0;
