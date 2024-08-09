@@ -278,7 +278,6 @@ DWORD WINAPI SchemeBLoop(LPVOID) {
 #else
     loadControls(); // Load controls once initially in release builds
     while (g_running) {
-        loadControls();
         SchemeB();
         Sleep(20); // Sleep
     }
