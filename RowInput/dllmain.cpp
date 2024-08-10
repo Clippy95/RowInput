@@ -39,7 +39,7 @@ std::unordered_map<std::string, uintptr_t> addressMap = {
     {"startbutton", 0x0234EA04},
     {"radialmenu", 0x0234E7AC},
     {"menuselect", 0x0234E96C},
-    {"jump", 0x0234E6CC},
+    {"jump", 0x0234E7A4},
     {"sprint", 0x0234E80C},
     {"reload", 0x0234E7EC},
     {"crouch", 0x0234E7F4},
