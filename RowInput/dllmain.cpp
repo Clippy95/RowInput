@@ -235,30 +235,32 @@ __declspec(noinline) void SchemeB() {
     uint8_t* holdingbullets = (uint8_t*)0x031ABC44;
     uint8_t* menu_status = (uint8_t*)0x00EBE860;
     if (*menu_status == 2) {
-        switch (*player_status) {
-        case 3:
-            applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
-            break;
-        case 5:
-            applyControls(controlsMap["Boat"], addressMap); // Boat controls
-            break;
-        case 6:
-            applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
-            break;
-        case 8:
-            applyControls(controlsMap["Plane"], addressMap); // Plane controls
-            break;
-        case 22:
-            applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
-            break;
-        default:
-            if (*holdingbullets == 0) {
-                applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
+        if (true) //this fixes in-game controls menu taking precedence idk how {
+            switch (*player_status) {
+            case 3:
+                applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
+                break;
+            case 5:
+                applyControls(controlsMap["Boat"], addressMap); // Boat controls
+                break;
+            case 6:
+                applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
+                break;
+            case 8:
+                applyControls(controlsMap["Plane"], addressMap); // Plane controls
+                break;
+            case 22:
+                applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
+                break;
+            default:
+                if (*holdingbullets == 0) {
+                    applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
+                }
+                else {
+                    applyControls(controlsMap["Default"], addressMap); // Default controls
+                }
+                break;
             }
-            else {
-                applyControls(controlsMap["Default"], addressMap); // Default controls
-            }
-            break;
         }
     }
 }
