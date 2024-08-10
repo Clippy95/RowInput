@@ -235,7 +235,7 @@ __declspec(noinline) void SchemeB() {
     uint8_t* holdingbullets = (uint8_t*)0x031ABC44;
     uint8_t* menu_status = (uint8_t*)0x00EBE860;
     if (*menu_status == 2) {
-        if (true) //this fixes in-game controls menu taking precedence idk how {
+        if (true) {  //this fixes in-game controls menu taking precedence idk how
             switch (*player_status) {
             case 3:
                 applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
