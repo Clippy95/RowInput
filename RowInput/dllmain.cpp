@@ -12,7 +12,7 @@
 #include <algorithm> // Include for std::transform
 
 #pragma comment(lib, "libMinHook.x86.lib")
-
+#pragma optimize("", off)
 typedef int(*originalCall_t)();
 originalCall_t originalCall;
 
@@ -39,10 +39,11 @@ std::unordered_map<std::string, uintptr_t> addressMap = {
     {"startbutton", 0x0234EA04},
     {"radialmenu", 0x0234E7AC},
     {"menuselect", 0x0234E96C},
-    {"jump", 0x0234E6CC},
+    {"jump", 0x0234E7A4},
     {"sprint", 0x0234E80C},
     {"reload", 0x0234E7EC},
     {"crouch", 0x0234E7F4},
+    {"fineaim", 0x0234E7FC},
     {"grabhuman", 0x0234E804},
     {"taunt", 0x0234E92C},
     {"compliment", 0x0234E934},
@@ -77,8 +78,8 @@ std::unordered_map<std::string, uint8_t> buttonMap = {
     {"RB", 5},
     {"SELECT", 6},
     {"START", 7},
-    {"RS", 8},
-    {"LS", 9},
+    {"RS", 9},
+    {"LS", 8},
     {"LT", 10},
     {"RT", 11},
     {"DPadRight", 16},
@@ -102,13 +103,13 @@ std::string getCurrentDirectory() {
 }
 
 // Function to read the INI files and set the mappings
-void readIniFile(const std::string& filePath, std::unordered_map<std::string, uint8_t>& controlMap) {
+bool readIniFile(const std::string& filePath, std::unordered_map<std::string, uint8_t>& controlMap) {
     if (!std::filesystem::exists(filePath)) {
-        // If the file does not exist, return without doing anything
-#ifdef _DEBUG
+        // If the file does not exist, return false
+        #ifdef _DEBUG
         std::cout << "File does not exist: " << filePath << std::endl;
 #endif
-        return;
+        return false;
     }
 
 #ifdef _DEBUG
@@ -126,84 +127,138 @@ void readIniFile(const std::string& filePath, std::unordered_map<std::string, ui
 #ifdef _DEBUG
                     std::cout << "Set " << key << " to " << (int)controlMap[key] << std::endl;
 #endif
-                } else {
+                }
+                else {
 #ifdef _DEBUG
                     std::cout << "Button " << kv.second << " not found in buttonMap" << std::endl;
 #endif
                 }
             }
-        } else {
+            return true;
+        }
+        else {
 #ifdef _DEBUG
             std::cout << "No 'Controls' section found in INI file" << std::endl;
 #endif
         }
-    } else {
+    }
+    else {
         MessageBoxW(NULL, L"Failed to read INI file", L"Error", MB_OK | MB_ICONERROR);
     }
+    return false;
 }
 
 void loadControls() {
     std::string currentDir = getCurrentDirectory();
-    readIniFile(currentDir + "\\RowInput\\Default.ini", controlsMap["Default"]); // Default controls
-    readIniFile(currentDir + "\\RowInput\\Vehicle.ini", controlsMap["Vehicle"]); // Vehicle controls
-    readIniFile(currentDir + "\\RowInput\\Boat.ini", controlsMap["Boat"]); // Boat controls
-    readIniFile(currentDir + "\\RowInput\\Helicopter.ini", controlsMap["Helicopter"]); // Helicopter controls
-    readIniFile(currentDir + "\\RowInput\\Plane.ini", controlsMap["Plane"]); // Plane controls
+
+    // Load default controls
+    readIniFile(currentDir + "\\RowInput\\Default.ini", controlsMap["Default"]);
+
+    // Load specific controls with fallback to default
+    if (!readIniFile(currentDir + "\\RowInput\\Vehicle.ini", controlsMap["Vehicle"])) {
+        controlsMap["Vehicle"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for Vehicle" << std::endl;
+#endif
+    }
+
+    if (!readIniFile(currentDir + "\\RowInput\\Boat.ini", controlsMap["Boat"])) {
+        controlsMap["Boat"] = controlsMap["Vehicle"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Vehicle controls for Boat" << std::endl;
+#endif
+    }
+
+    if (!readIniFile(currentDir + "\\RowInput\\Helicopter.ini", controlsMap["Helicopter"])) {
+        controlsMap["Helicopter"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for Helicopter" << std::endl;
+#endif
+    }
+
+    if (!readIniFile(currentDir + "\\RowInput\\Plane.ini", controlsMap["Plane"])) {
+        controlsMap["Plane"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for Plane" << std::endl;
+#endif
+    }
+
+    if (!readIniFile(currentDir + "\\RowInput\\HumanShield.ini", controlsMap["HumanShield"])) {
+        controlsMap["HumanShield"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for HumanShield" << std::endl;
+#endif
+    }
+
+    if (!readIniFile(currentDir + "\\RowInput\\Bullets.ini", controlsMap["Bullets"])) {
+        controlsMap["Bullets"] = controlsMap["Default"];
+#ifdef _DEBUG
+        std::cout << "Fallback to Default controls for Bullets" << std::endl;
+#endif
+    }
 }
 
 void setControlValue(uintptr_t address, uint8_t value) {
-    if (*(uint8_t*)address != value) {
-        patchByte((BYTE*)address, value);
+    // Temporarily disable the value check by always patching the address
+    patchByte((BYTE*)address, value);
 #ifdef _DEBUG
-        std::cout << "Patched address " << std::hex << address << " with value " << std::dec << (int)value << std::endl;
+    std::cout << "Patched address " << std::hex << address << " with value " << std::dec << (int)value << std::endl;
 #endif
-        lastAppliedValues[std::to_string(address)] = value;
-    } else {
-#ifdef _DEBUG
-        if (lastAppliedValues[std::to_string(address)] != value) {
-            std::cout << "Address " << std::hex << address << " already has value " << std::dec << (int)value << std::endl;
-            lastAppliedValues[std::to_string(address)] = value;
-        }
-#endif
-    }
+    lastAppliedValues[std::to_string(address)] = value;
 }
 
 void applyControls(const std::unordered_map<std::string, uint8_t>& controls, const std::unordered_map<std::string, uintptr_t>& addressMap) {
     for (const auto& kv : controls) {
         if (addressMap.find(kv.first) != addressMap.end()) {
             uintptr_t address = addressMap.at(kv.first);
-            if (lastAppliedValues[std::to_string(address)] != kv.second) {
+
+            if (*(uint8_t*)address != kv.second) {
                 setControlValue(address, kv.second);
+                lastAppliedValues[std::to_string(address)] = kv.second; // Update last applied value
             }
-        } else {
+        }
+        else {
 #ifdef _DEBUG
             std::cout << "Address for control " << kv.first << " not found" << std::endl;
 #endif
         }
     }
 }
-
-void SchemeB() {
-    uint8_t* player_status = (uint8_t*)0x00E9A5BC;
-    switch (*player_status) {
-        case 3:
-            applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
-            break;
-        case 5:
-            applyControls(controlsMap["Boat"], addressMap); // Boat controls
-            break;
-        case 6:
-            applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
-            break;
-        case 8:
-            applyControls(controlsMap["Plane"], addressMap); // Plane controls
-            break;
-        default:
-            applyControls(controlsMap["Default"], addressMap); // Default controls
-            break;
+#pragma optimize("", off)
+__declspec(noinline) void SchemeB() {
+    uint8_t* player_status =  (uint8_t*)0x00E9A5BC;
+    uint8_t* holdingbullets = (uint8_t*)0x031ABC44;
+    uint8_t* menu_status = (uint8_t*)0x00EBE860;
+    if (*menu_status == 2) {
+        //if (true) {  //this fixes in-game controls menu taking precedence idk how
+            switch (*player_status) {
+            case 3:
+                applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
+                break;
+            case 5:
+                applyControls(controlsMap["Boat"], addressMap); // Boat controls
+                break;
+            case 6:
+                applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
+                break;
+            case 8:
+                applyControls(controlsMap["Plane"], addressMap); // Plane controls
+                break;
+            case 22:
+                applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
+                break;
+            default:
+                if (*holdingbullets == 0) {
+                    applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
+                }
+                else {
+                    applyControls(controlsMap["Default"], addressMap); // Default controls
+                }
+                break;
+            }
+        }
     }
-}
-
+#pragma optimize("", on)
 int myDetour() {
     // Call the original function
     return originalCall();
@@ -211,15 +266,20 @@ int myDetour() {
 
 DWORD WINAPI SchemeBLoop(LPVOID) {
 #ifdef _DEBUG
-    loadControls(); // Always load controls in debug builds
-#endif
+    while (g_running) {
+        loadControls(); // Reload controls in debug builds
+        SchemeB();
+        Sleep(33); // Sleep 
+}
+#else
+    loadControls(); // Load controls once initially in release builds
     while (g_running) {
         SchemeB();
-        Sleep(340); // Sleep for 340 ms
+        Sleep(20); // Sleep
     }
+#endif
     return 0;
 }
-
 HANDLE g_thread = NULL;
 
 void setupHook() {
