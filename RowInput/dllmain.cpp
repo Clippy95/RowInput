@@ -199,30 +199,25 @@ void loadControls() {
 }
 
 void setControlValue(uintptr_t address, uint8_t value) {
-    if (*(uint8_t*)address != value) {
-        patchByte((BYTE*)address, value);
+    // Temporarily disable the value check by always patching the address
+    patchByte((BYTE*)address, value);
 #ifdef _DEBUG
-        std::cout << "Patched address " << std::hex << address << " with value " << std::dec << (int)value << std::endl;
+    std::cout << "Patched address " << std::hex << address << " with value " << std::dec << (int)value << std::endl;
 #endif
-        lastAppliedValues[std::to_string(address)] = value;
-    } else {
-#ifdef _DEBUG
-        if (lastAppliedValues[std::to_string(address)] != value) {
-            std::cout << "Address " << std::hex << address << " already has value " << std::dec << (int)value << std::endl;
-            lastAppliedValues[std::to_string(address)] = value;
-        }
-#endif
-    }
+    lastAppliedValues[std::to_string(address)] = value;
 }
 
 void applyControls(const std::unordered_map<std::string, uint8_t>& controls, const std::unordered_map<std::string, uintptr_t>& addressMap) {
     for (const auto& kv : controls) {
         if (addressMap.find(kv.first) != addressMap.end()) {
             uintptr_t address = addressMap.at(kv.first);
-            if (lastAppliedValues[std::to_string(address)] != kv.second) {
+
+            if (*(uint8_t*)address != kv.second) {
                 setControlValue(address, kv.second);
+                lastAppliedValues[std::to_string(address)] = kv.second; // Update last applied value
             }
-        } else {
+        }
+        else {
 #ifdef _DEBUG
             std::cout << "Address for control " << kv.first << " not found" << std::endl;
 #endif
@@ -235,7 +230,7 @@ __declspec(noinline) void SchemeB() {
     uint8_t* holdingbullets = (uint8_t*)0x031ABC44;
     uint8_t* menu_status = (uint8_t*)0x00EBE860;
     if (*menu_status == 2) {
-        if (true) {  //this fixes in-game controls menu taking precedence idk how
+        //if (true) {  //this fixes in-game controls menu taking precedence idk how
             switch (*player_status) {
             case 3:
                 applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
@@ -263,7 +258,6 @@ __declspec(noinline) void SchemeB() {
             }
         }
     }
-}
 #pragma optimize("", on)
 int myDetour() {
     // Call the original function
