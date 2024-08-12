@@ -227,7 +227,7 @@ void applyControls(const std::unordered_map<std::string, uint8_t>& controls, con
 #pragma optimize("", off)
 __declspec(noinline) void SchemeB() {
     uint8_t* player_status =  (uint8_t*)0x00E9A5BC;
-    uint8_t* holdingbullets = (uint8_t*)0x031ABC44;
+    uint8_t* holdingbullets = (uint8_t*)0x02CD26A0;
     uint8_t* menu_status = (uint8_t*)0x00EBE860;
     if (*menu_status == 2) {
         //if (true) {  //this fixes in-game controls menu taking precedence idk how
@@ -248,7 +248,7 @@ __declspec(noinline) void SchemeB() {
                 applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
                 break;
             default:
-                if (*holdingbullets == 0) {
+                if (*holdingbullets != 3) {
                     applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
                 }
                 else {
