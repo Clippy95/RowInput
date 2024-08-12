@@ -226,38 +226,42 @@ void applyControls(const std::unordered_map<std::string, uint8_t>& controls, con
 }
 #pragma optimize("", off)
 __declspec(noinline) void SchemeB() {
-    uint8_t* player_status =  (uint8_t*)0x00E9A5BC;
+    uint8_t* player_status = (uint8_t*)0x00E9A5BC;
     uint8_t* holdingbullets = (uint8_t*)0x02CD26A0;
     uint8_t* menu_status = (uint8_t*)0x00EBE860;
+    uint8_t* shield_status = (uint8_t*)0x00E9A624; // Additional address for HumanShield check
+
     if (*menu_status == 2) {
-        //if (true) {  //this fixes in-game controls menu taking precedence idk how
-            switch (*player_status) {
-            case 3:
-                applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
-                break;
-            case 5:
-                applyControls(controlsMap["Boat"], addressMap); // Boat controls
-                break;
-            case 6:
-                applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
-                break;
-            case 8:
-                applyControls(controlsMap["Plane"], addressMap); // Plane controls
-                break;
-            case 22:
-                applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls
-                break;
-            default:
-                if (*holdingbullets != 3) {
-                    applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
-                }
-                else {
-                    applyControls(controlsMap["Default"], addressMap); // Default controls
-                }
-                break;
+        switch (*player_status) {
+        case 3:
+            applyControls(controlsMap["Vehicle"], addressMap); // Vehicle controls
+            break;
+        case 5:
+            applyControls(controlsMap["Boat"], addressMap); // Boat controls
+            break;
+        case 6:
+            applyControls(controlsMap["Helicopter"], addressMap); // Helicopter controls
+            break;
+        case 8:
+            applyControls(controlsMap["Plane"], addressMap); // Plane controls
+            break;
+        case 22:
+            applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls for status 22
+            break;
+        default:
+            if (*shield_status == 15) {
+                applyControls(controlsMap["HumanShield"], addressMap); // HumanShield controls for shield status 15
             }
+            else if (*holdingbullets != 3) {
+                applyControls(controlsMap["Bullets"], addressMap); // Bullets controls
+            }
+            else {
+                applyControls(controlsMap["Default"], addressMap); // Default controls
+            }
+            break;
         }
     }
+}
 #pragma optimize("", on)
 int myDetour() {
     // Call the original function
