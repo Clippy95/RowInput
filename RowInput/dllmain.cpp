@@ -18,7 +18,7 @@ originalCall_t originalCall;
 
 std::atomic<bool> g_running(true); // Atomic flag to control the loop
 
-std::unordered_map<std::string, uint8_t> lastAppliedValues; // Store last applied values to avoid console spam
+std::unordered_map<std::string, uint8_t> lastAppliedValues;
 std::unordered_map<std::string, std::unordered_map<std::string, uint8_t>> controlsMap; // Store controls for each state
 
 // Convert a string to lowercase
