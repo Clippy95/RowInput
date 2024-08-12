@@ -25,6 +25,7 @@ jump
 sprint
 reload
 crouch
+fineaim
 grabhuman
 taunt
 compliment
