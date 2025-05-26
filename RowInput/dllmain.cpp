@@ -263,7 +263,7 @@ __declspec(noinline) void SchemeB() {
     }
 }
 uint8_t* menu_status = (uint8_t*)0x00EBE860;
-#define default_sleep 33
+#define default_sleep 20
 volatile WORD sleep_time = default_sleep;
 DWORD WINAPI SchemeBLoop(LPVOID) {
 #ifdef _DEBUG
