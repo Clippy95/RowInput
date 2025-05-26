@@ -262,12 +262,9 @@ __declspec(noinline) void SchemeB() {
         }
     }
 }
-#pragma optimize("", on)
-int myDetour() {
-    // Call the original function
-    return originalCall();
-}
-
+uint8_t* menu_status = (uint8_t*)0x00EBE860;
+#define default_sleep 33
+volatile WORD sleep_time = default_sleep;
 DWORD WINAPI SchemeBLoop(LPVOID) {
 #ifdef _DEBUG
     while (g_running) {
@@ -279,7 +276,11 @@ DWORD WINAPI SchemeBLoop(LPVOID) {
     loadControls(); // Load controls once initially in release builds
     while (g_running) {
         SchemeB();
-        Sleep(20); // Sleep
+        if (*menu_status != 2) {
+            loadControls();
+            sleep_time = 50 * default_sleep;
+        }
+        Sleep(sleep_time); // Sleep
     }
 #endif
     return 0;
@@ -287,20 +288,6 @@ DWORD WINAPI SchemeBLoop(LPVOID) {
 HANDLE g_thread = NULL;
 
 void setupHook() {
-    if (MH_Initialize() != MH_OK) {
-        MessageBoxW(NULL, L"FAILED TO INITIALIZE", L"Error", MB_OK | MB_ICONERROR);
-        return;
-    }
-
-    if (MH_CreateHook((LPVOID)0x520450, &myDetour, (LPVOID*)&originalCall) != MH_OK) {
-        MessageBoxW(NULL, L"FAILED TO HOOK", L"Error", MB_OK | MB_ICONERROR);
-        return;
-    }
-
-    if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
-        MessageBoxW(NULL, L"FAILED TO ENABLE", L"Error", MB_OK | MB_ICONERROR);
-        return;
-    }
 
 #ifdef _DEBUG
     // Allocate a console for debug output
