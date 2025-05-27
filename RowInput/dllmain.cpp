@@ -289,13 +289,13 @@ typedef int(*originalCall_t)();
 originalCall_t originalCall;
 bool* is_controller_connect = (bool*)(0x0252A58E);
 int detour() {
-    if (*is_controller_connect) {
+
         SchemeB();
         if (*menu_status != 2) {
             loadControls();
             //sleep_time = 50 * default_sleep;
         }
-    }
+    
     return originalCall();
 }
 void setupHook() {
