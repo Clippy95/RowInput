@@ -13,8 +13,6 @@
 
 #pragma comment(lib, "libMinHook.x86.lib")
 #pragma optimize("", off)
-typedef int(*originalCall_t)();
-originalCall_t originalCall;
 
 std::atomic<bool> g_running(true); // Atomic flag to control the loop
 
@@ -263,7 +261,7 @@ __declspec(noinline) void SchemeB() {
     }
 }
 uint8_t* menu_status = (uint8_t*)0x00EBE860;
-#define default_sleep 20
+#define default_sleep 1
 volatile WORD sleep_time = default_sleep;
 DWORD WINAPI SchemeBLoop(LPVOID) {
 #ifdef _DEBUG
@@ -287,6 +285,19 @@ DWORD WINAPI SchemeBLoop(LPVOID) {
 }
 HANDLE g_thread = NULL;
 
+typedef int(*originalCall_t)();
+originalCall_t originalCall;
+bool* is_controller_connect = (bool*)(0x0252A58E);
+int detour() {
+    if (*is_controller_connect) {
+        SchemeB();
+        if (*menu_status != 2) {
+            loadControls();
+            //sleep_time = 50 * default_sleep;
+        }
+    }
+    return originalCall();
+}
 void setupHook() {
 
 #ifdef _DEBUG
@@ -299,11 +310,16 @@ void setupHook() {
     std::cout << "Hook setup complete. Starting SchemeB loop..." << std::endl;
     loadControls(); // Load controls initially in debug builds
 #endif
-
+    MH_Initialize();
+    if (MH_CreateHook((LPVOID)0x520450, &detour, (LPVOID*)&originalCall) != MH_OK) { //Tervel's hook
+        MessageBoxW(NULL, L"FAILED TO HOOK", L"Error", MB_OK | MB_ICONERROR);
+        return;
+    }
+    MH_EnableHook(MH_ALL_HOOKS);
     // Create the thread to run SchemeB in a loop
-    g_thread = CreateThread(NULL, 0, SchemeBLoop, NULL, 0, NULL);
+    //g_thread = CreateThread(NULL, 0, SchemeBLoop, NULL, 0, NULL);
     if (g_thread == NULL) {
-        MessageBoxW(NULL, L"FAILED TO CREATE THREAD", L"Error", MB_OK | MB_ICONERROR);
+        //MessageBoxW(NULL, L"FAILED TO CREATE THREAD", L"Error", MB_OK | MB_ICONERROR);
     }
     else {
 #ifdef _DEBUG
@@ -334,7 +350,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved) {
         setupHook();
         break;
     case DLL_PROCESS_DETACH:
-        stopHook();
+        //stopHook();
         break;
     case DLL_THREAD_ATTACH:
         break;
